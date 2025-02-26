@@ -11,7 +11,7 @@ type parameters struct {
 }
 
 type returnVals struct {
-	Valid bool `json:"valid"`
+	Cleaned_Body string `json:"cleaned_body"`
 }
 
 const MAX_CHIRP_LENGTH = 140
@@ -28,8 +28,11 @@ func handlerChirpLen(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Chirp is too long", nil)
 		return
 	}
+
+	cleaned_body := censorProfanity(params.Body)
+
 	respondWithJSON(w, http.StatusOK, returnVals{
-		Valid: true,
+		Cleaned_Body: cleaned_body,
 	})
 
 }
