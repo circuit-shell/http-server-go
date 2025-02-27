@@ -1,17 +1,30 @@
 package main
 
 import (
+	"database/sql"
+	"github.com/circuit-shell/http-server-go/internal/database"
 	"log"
 	"net/http"
+	"os"
 )
 
+import _ "github.com/lib/pq"
+
 func main() {
+	apiCfg := &apiConfig{}
+
+	dbURL := os.Getenv("DB_URL")
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dbQueries := database.New(db)
+	apiCfg.dbQueries = dbQueries
+
 	const filepathRoot = "."
 	const port = "8080"
-
 	mux := http.NewServeMux()
-
-	apiCfg := &apiConfig{}
 
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
 
