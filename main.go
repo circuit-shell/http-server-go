@@ -2,18 +2,25 @@ package main
 
 import (
 	"database/sql"
-	"github.com/circuit-shell/http-server-go/internal/database"
 	"log"
 	"net/http"
 	"os"
-)
 
-import _ "github.com/lib/pq"
+	"github.com/circuit-shell/http-server-go/internal/database"
+	"github.com/joho/godotenv"
+
+	_ "github.com/lib/pq"
+)
 
 func main() {
 	apiCfg := &apiConfig{}
 
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading envs", err)
+	}
 	dbURL := os.Getenv("DB_URL")
+
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal(err)
@@ -21,6 +28,7 @@ func main() {
 
 	dbQueries := database.New(db)
 	apiCfg.dbQueries = dbQueries
+  apiCfg.platform = os.Getenv("PLATFORM")
 
 	const filepathRoot = "."
 	const port = "8080"
@@ -30,6 +38,7 @@ func main() {
 
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	mux.HandleFunc("POST /api/validate_chirp", handlerChirpLen)
+	mux.HandleFunc("POST /api/users", apiCfg.handlerUsers)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.handlerMetricsReset)
