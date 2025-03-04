@@ -19,7 +19,7 @@ type userInput struct {
 	Email string `json:"email"`
 }
 
-func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	userParams := userInput{}
 	err := decoder.Decode(&userParams)
@@ -38,4 +38,13 @@ func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: user.CreatedAt,
 		Email:     user.Email,
 	})
+}
+
+func (cfg *apiConfig) handlerReadUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := cfg.dbQueries.GetUsers(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error reading users", err)
+		return
+	}
+	respondWithJSON(w, http.StatusOK, users)
 }
