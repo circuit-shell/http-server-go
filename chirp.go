@@ -66,5 +66,17 @@ func (cfg *apiConfig) handlerReadChirp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, chirps)
+	formatted_chirps := []Chirp{}
+
+	for _, chirp := range chirps {
+		formatted_chirps = append(formatted_chirps, Chirp{
+			ID:        chirp.ID,
+			CreatedAt: chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
+			Body:      chirp.Body,
+			UserID:    chirp.UserID,
+		})
+
+	}
+	respondWithJSON(w, http.StatusOK, formatted_chirps)
 }
