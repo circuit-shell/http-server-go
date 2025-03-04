@@ -59,7 +59,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 
 }
 
-func (cfg *apiConfig) handlerReadChirp(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerReadChirps(w http.ResponseWriter, r *http.Request) {
 	chirps, err := cfg.dbQueries.GetChirps(r.Context())
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error reading chirps", err)
@@ -79,4 +79,31 @@ func (cfg *apiConfig) handlerReadChirp(w http.ResponseWriter, r *http.Request) {
 
 	}
 	respondWithJSON(w, http.StatusOK, formatted_chirps)
+}
+
+func (cfg *apiConfig) handlerReadChirp(w http.ResponseWriter, r *http.Request) {
+	iDStr := r.PathValue("id")
+	if iDStr == "" {
+		respondWithError(w, http.StatusBadRequest, "Missing chirp ID in path", nil)
+		return
+	}
+
+	userID, err := uuid.Parse(iDStr)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error need a chirp ID", err)
+		return
+	}
+	chirp, err := cfg.dbQueries.GetChirpsByID(r.Context(), userID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error reading chirp", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, Chirp{
+		ID:        chirp.ID,
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body:      chirp.Body,
+		UserID:    chirp.UserID,
+	})
 }
