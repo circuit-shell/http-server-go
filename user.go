@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/circuit-shell/http-server-go/internal/auth"
+	"github.com/circuit-shell/http-server-go/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -16,7 +18,8 @@ type User struct {
 }
 
 type userInput struct {
-	Email string `json:"email"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +30,17 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		respondWithError(w, http.StatusInternalServerError, "Error decoding user params", err)
 		return
 	}
-	user, err := cfg.dbQueries.CreateUser(r.Context(), userParams.Email)
+
+	hashedPw, err := auth.HashPassword(userParams.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error hashing password", err)
+		return
+	}
+
+	user, err := cfg.dbQueries.CreateUser(r.Context(), database.CreateUserParams{
+		Email:          userParams.Email,
+		HashedPassword: hashedPw,
+	})
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Error creating db", err)
 		return
