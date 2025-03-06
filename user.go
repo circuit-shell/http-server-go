@@ -53,6 +53,36 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	userParams := userInput{}
+	err := decoder.Decode(&userParams)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error decoding user params", err)
+		return
+	}
+
+	user, err := cfg.dbQueries.GetUserByEmail(r.Context(), userParams.Email)
+
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid password", err)
+		return
+	}
+
+	if !auth.CheckPasswordHash(userParams.Password, user.HashedPassword) {
+		respondWithError(w, http.StatusUnauthorized, "Invalid password", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, User{
+		ID:        user.ID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.CreatedAt,
+		Email:     user.Email,
+	})
+
+}
+
 func (cfg *apiConfig) handlerReadUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := cfg.dbQueries.GetUsers(r.Context())
 	if err != nil {
