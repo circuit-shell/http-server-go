@@ -12,6 +12,12 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// POST http://localhost:8080/api/
+// Content-Type: application/json
+// {"name": "John Doe"}
+
+// ishopC4!T http://localhost:8080/api/healthz
+
 func main() {
 	apiCfg := &apiConfig{}
 
