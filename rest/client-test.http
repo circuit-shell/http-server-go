@@ -1,3 +1,47 @@
-GET https://pokeapi.co/api/v2/pokemon/pikachu
-Accept: application/json
+# Health check
+GET http://localhost:8080/api/healthz
+###
+
+# Reset
+POST http://localhost:8080/admin/reset
+###
+
+# GET users
+GET http://localhost:8080/api/users
+###
+
+# POST users
+POST http://localhost:8080/api/users
+content-type: application/json
+
+{
+  "email": "usermaster@gmail.com",
+  "password": "abc123"
+}
+###
+
+# login
+POST http://localhost:8080/api/login
+content-type: application/json
+
+{
+  "password": "abc123",
+  "email": "usermaster@gmail.com",
+  "expires_in_seconds": 300
+}
+###
+
+# GET chirps
+GET http://localhost:8080/api/chirps
+###
+
+# POST /api/chirps
+POST http://localhost:8080/api/chirps
+content-type: application/json
+
+{
+  "body": "this is a chirp!",
+  "user_id": "c05fa142-e3af-44d4-80e7-dc6897ab0d32"
+}
+###
 

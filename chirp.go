@@ -29,7 +29,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	params := chirpInput{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error decoding params", err)
+		respondWithError(w, http.StatusInternalServerError, "Error posting chirp, decoding params", err)
 		return
 	}
 	if len(params.Body) > MAX_CHIRP_LENGTH {

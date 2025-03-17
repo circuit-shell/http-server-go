@@ -3,6 +3,8 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -46,7 +48,7 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&claimsStruct,
-		func(token *jwt.Token) (interface{}, error) { return []byte(tokenSecret), nil },
+		func(token *jwt.Token) (any, error) { return []byte(tokenSecret), nil },
 	)
 	if err != nil {
 		return uuid.Nil, err
@@ -72,14 +74,16 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	return id, nil
 }
 
-// func GetBearerToken(headers http.Header) (string, error){
-//   authorization := headers.Get("Authorization")
-//   if authorization == "" {
-//     return "", errors.New("missing Authorization header")
-//   }
+func GetBearerToken(headers http.Header) (string, error) {
+	authorization := headers.Get("Authorization")
+	if authorization == "" {
+		return "", errors.New("missing Authorization header")
+	}
 
-//   if !strings.HasPrefix(authorization, "Bearer ") {
-//     return "", errors.New("invalid Authorization header")
-//   }
+	if !strings.HasPrefix(authorization, "Bearer ") {
+		return "", errors.New("invalid Authorization header")
+	}
 
-// }
+	return strings.TrimPrefix(authorization, "Bearer "), nil
+
+}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -18,8 +19,9 @@ type User struct {
 }
 
 type userInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email            string `json:"email"`
+	Password         string `json:"password"`
+	ExpiresInSeconds int    `json:"expires_in_seconds,omitempty"`
 }
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +44,7 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		HashedPassword: hashedPw,
 	})
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Error creating db", err)
+		respondWithError(w, http.StatusBadRequest, "Error creating user", err)
 		return
 	}
 	respondWithJSON(w, http.StatusCreated, User{
@@ -63,6 +65,13 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := cfg.dbQueries.GetUserByEmail(r.Context(), userParams.Email)
+
+	expiresInSeconds := userParams.ExpiresInSeconds
+	if expiresInSeconds == 0 || expiresInSeconds > 3600 {
+		expiresInSeconds = 3600 // Default 1 hour
+	}
+
+	log.Println("user", expiresInSeconds, cfg.serverSecret)
 
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Invalid password", err)

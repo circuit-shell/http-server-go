@@ -12,11 +12,11 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// POST http://localhost:8080/api/
-// Content-Type: application/json
-// {"name": "John Doe"}
+// GET http://localhost:8080/api/chirps
 
-// ishopC4!T http://localhost:8080/api/healthz
+// GET http://localhost:8080/api/healthz
+
+// GET http://localhost:8080/api/users
 
 func main() {
 	apiCfg := &apiConfig{}
@@ -25,16 +25,20 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading envs", err)
 	}
-	dbURL := os.Getenv("DB_URL")
 
+	dbURL := os.Getenv("DB_URL")
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	dbQueries := database.New(db)
-	apiCfg.dbQueries = dbQueries
+	apiCfg.dbQueries = database.New(db)
 	apiCfg.platform = os.Getenv("PLATFORM")
+	apiCfg.serverSecret = os.Getenv("SERVER_SECRET")
+
+	log.Printf("Connected to database: %s", dbURL)
+	log.Printf("Server secret: %s", os.Getenv("SERVER_SECRET"))
+	log.Printf("Platform: %s", os.Getenv("PLATFORM"))
 
 	const filepathRoot = "."
 	const port = "8080"
@@ -60,7 +64,6 @@ func main() {
 		Addr:    ":" + port,
 		Handler: mux,
 	}
-	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
 	log.Printf("Serving http://localhost:%v", port)
 	log.Fatal(srv.ListenAndServe())
 }
