@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/circuit-shell/http-server-go/internal/auth"
 	"github.com/circuit-shell/http-server-go/internal/database"
 	"github.com/google/uuid"
 )
@@ -25,9 +26,24 @@ type Chirp struct {
 }
 
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
+	// get the token from the request
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Error getting token", err)
+		return
+	}
+
+	// validate the token
+  userID, err := auth.ValidateJWT(token, cfg.serverSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Error validating token", err)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	params := chirpInput{}
-	err := decoder.Decode(&params)
+
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error posting chirp, decoding params", err)
 		return
@@ -42,7 +58,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	// Add error handling for database operation
 	chirp, err := cfg.dbQueries.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   cleaned_body,
-		UserID: params.UserID, // Changed UserId to UserID
+		UserID: userID,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error creating chirp", err)

@@ -29,19 +29,24 @@ content-type: application/json
   "email": "usermaster@gmail.com",
   "expires_in_seconds": 300
 }
-###
 
-# GET chirps
-GET http://localhost:8080/api/chirps
+> {%
+    client.global.set("auth_token", response.body.token);
+    client.global.set("user_id", response.body.user_id);
+%}
 ###
 
 # POST /api/chirps
 POST http://localhost:8080/api/chirps
 content-type: application/json
+Authorization: Bearer {{auth_token}}
 
 {
   "body": "this is a chirp!",
-  "user_id": "c05fa142-e3af-44d4-80e7-dc6897ab0d32"
+  "user_id": "{{user_id}}"
 }
 ###
 
+# GET chirps
+GET http://localhost:8080/api/chirps
+###
