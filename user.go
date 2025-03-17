@@ -18,6 +18,11 @@ type User struct {
 	Email     string    `json:"email"`
 }
 
+type AuthenticatedUser struct {
+	User
+	Token string `json:"token"`
+}
+
 type userInput struct {
 	Email            string `json:"email"`
 	Password         string `json:"password"`
@@ -120,10 +125,15 @@ func (cfg *apiConfig) handlerReadUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, User{
+	userStruc := User{
 		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.CreatedAt,
 		Email:     user.Email,
+	}
+
+	respondWithJSON(w, http.StatusOK, AuthenticatedUser{
+		User:  userStruc,
+		Token: "asdfasdfasdfad ",
 	})
 }
