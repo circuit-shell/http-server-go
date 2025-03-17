@@ -12,12 +12,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// GET http://localhost:8080/api/chirps
-
-// GET http://localhost:8080/api/healthz
-
-// GET http://localhost:8080/api/users
-
 func main() {
 	apiCfg := &apiConfig{}
 

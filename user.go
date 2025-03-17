@@ -88,11 +88,20 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, User{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.CreatedAt,
-		Email:     user.Email,
+	token, err := auth.MakeJWT(user.ID, cfg.serverSecret, time.Duration(expiresInSeconds)*time.Second)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error generating token", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, AuthenticatedUser{
+		User: User{
+			ID:        user.ID,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.CreatedAt,
+			Email:     user.Email,
+		},
+		Token: token,
 	})
 
 }
@@ -125,15 +134,10 @@ func (cfg *apiConfig) handlerReadUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userStruc := User{
+	respondWithJSON(w, http.StatusOK, User{
 		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.CreatedAt,
 		Email:     user.Email,
-	}
-
-	respondWithJSON(w, http.StatusOK, AuthenticatedUser{
-		User:  userStruc,
-		Token: "asdfasdfasdfad ",
 	})
 }
