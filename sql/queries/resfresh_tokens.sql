@@ -1,9 +1,11 @@
 -- name: CreateRefreshToken :one
 WITH revoke_tokens AS (
     UPDATE refresh_tokens
-    SET revoked_at = NOW()
+    SET 
+        revoked_at = NOW(),
+        updated_at = NOW()
     WHERE user_id = $2 
-    AND revoked_at IS NULL
+        AND revoked_at IS NULL
 )
 INSERT INTO refresh_tokens (
     token,
@@ -24,3 +26,9 @@ INSERT INTO refresh_tokens (
 
 -- name: GetUserFromRefreshToken :one
 SELECT * FROM refresh_tokens WHERE token = $1 AND revoked_at IS NULL;
+
+
+-- name: RevokeRefreshTokens :exec
+UPDATE refresh_tokens
+  SET revoked_at = NOW(), updated_at = NOW()
+  WHERE user_id = $1;

@@ -14,9 +14,11 @@ import (
 const createRefreshToken = `-- name: CreateRefreshToken :one
 WITH revoke_tokens AS (
     UPDATE refresh_tokens
-    SET revoked_at = NOW()
+    SET 
+        revoked_at = NOW(),
+        updated_at = NOW()
     WHERE user_id = $2 
-    AND revoked_at IS NULL
+        AND revoked_at IS NULL
 )
 INSERT INTO refresh_tokens (
     token,
@@ -70,4 +72,15 @@ func (q *Queries) GetUserFromRefreshToken(ctx context.Context, token string) (Re
 		&i.RevokedAt,
 	)
 	return i, err
+}
+
+const revokeRefreshTokens = `-- name: RevokeRefreshTokens :exec
+UPDATE refresh_tokens
+  SET revoked_at = NOW(), updated_at = NOW()
+  WHERE user_id = $1
+`
+
+func (q *Queries) RevokeRefreshTokens(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, revokeRefreshTokens, userID)
+	return err
 }

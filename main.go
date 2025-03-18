@@ -42,19 +42,21 @@ func main() {
 
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 
+	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
+	mux.HandleFunc("POST /admin/reset", apiCfg.handlerMetricsReset)
+
+	mux.HandleFunc("POST /api/login", apiCfg.handleLogin)
+	mux.HandleFunc("POST /api/refresh", apiCfg.handleRefresh)
+	mux.HandleFunc("POST /api/revoke", apiCfg.handleRevoke)
+
 	mux.HandleFunc("POST /api/chirps", apiCfg.handlerCreateChirp)
 	mux.HandleFunc("GET /api/chirps", apiCfg.handlerReadChirps)
 	mux.HandleFunc("GET /api/chirps/{id}", apiCfg.handlerReadChirp)
 
 	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
+  mux.HandleFunc("PUT /api/users", apiCfg.handlerUpdateUser)
 	mux.HandleFunc("GET /api/users", apiCfg.handlerReadUsers)
 	mux.HandleFunc("GET /api/users/{id}", apiCfg.handlerReadUser)
-
-	mux.HandleFunc("POST /api/login", apiCfg.handleLogin)
-  mux.HandleFunc("POST /api/refresh", apiCfg.handleRefresh)
-
-	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
-	mux.HandleFunc("POST /admin/reset", apiCfg.handlerMetricsReset)
 
 	srv := &http.Server{
 		Addr:    ":" + port,

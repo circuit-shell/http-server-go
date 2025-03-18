@@ -10,12 +10,24 @@ POST http://localhost:8080/admin/reset
 GET http://localhost:8080/api/users
 ###
 
+
 # request: POST users
 POST http://localhost:8080/api/users
 content-type: application/json
 
 {
   "email": "usermaster@gmail.com",
+  "password": "abc123"
+}
+###
+
+# request: Update user
+PUT http://localhost:8080/api/users
+content-type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "email": "usermaster2@gmail.com",
   "password": "abc123"
 }
 ###
@@ -40,6 +52,14 @@ POST http://localhost:8080/api/refresh
 content-type: application/json
 Authorization: Bearer {{refresh_token}}
 ###
+
+# request: POST revoke
+POST http://localhost:8080/api/revoke
+content-type: application/json
+Authorization: Bearer {{refresh_token}}
+###
+
+
 
 # request: POST /api/chirps
 POST http://localhost:8080/api/chirps
