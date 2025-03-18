@@ -1,16 +1,16 @@
-# Health check
+# request: Health check
 GET http://localhost:8080/api/healthz
 ###
 
-# Reset
+# request: Reset
 POST http://localhost:8080/admin/reset
 ###
 
-# GET users
+# request: GET users
 GET http://localhost:8080/api/users
 ###
 
-# POST users
+# request: POST users
 POST http://localhost:8080/api/users
 content-type: application/json
 
@@ -20,33 +20,37 @@ content-type: application/json
 }
 ###
 
-# login
+# request: login
 POST http://localhost:8080/api/login
 content-type: application/json
 
 {
   "password": "abc123",
-  "email": "usermaster@gmail.com",
-  "expires_in_seconds": 300
+  "email": "usermaster@gmail.com"
 }
 
 > {%
     client.global.set("auth_token", response.body.token);
-    client.global.set("user_id", response.body.user_id);
+    client.global.set("refresh_token", response.body.refresh_token);
 %}
 ###
 
-# POST /api/chirps
+# request: POST refresh
+POST http://localhost:8080/api/refresh
+content-type: application/json
+Authorization: Bearer {{refresh_token}}
+###
+
+# request: POST /api/chirps
 POST http://localhost:8080/api/chirps
 content-type: application/json
 Authorization: Bearer {{auth_token}}
 
 {
-  "body": "this is a chirp!",
-  "user_id": "{{user_id}}"
+  "body": "trupm is a turd"
 }
 ###
 
-# GET chirps
+# request: GET chirps
 GET http://localhost:8080/api/chirps
 ###

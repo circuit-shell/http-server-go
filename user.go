@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 
@@ -10,6 +9,8 @@ import (
 	"github.com/circuit-shell/http-server-go/internal/database"
 	"github.com/google/uuid"
 )
+
+var EXPIRES_IN_SECONDS = 3600
 
 type User struct {
 	ID        uuid.UUID `json:"id"`
@@ -20,13 +21,17 @@ type User struct {
 
 type AuthenticatedUser struct {
 	User
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+type tokenResponse struct {
 	Token string `json:"token"`
 }
 
 type userInput struct {
-	Email            string `json:"email"`
-	Password         string `json:"password"`
-	ExpiresInSeconds int    `json:"expires_in_seconds,omitempty"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -63,34 +68,49 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	userParams := userInput{}
+
+	// Decode the user input
 	err := decoder.Decode(&userParams)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error decoding user params", err)
 		return
 	}
 
+	// Get the user from the database
 	user, err := cfg.dbQueries.GetUserByEmail(r.Context(), userParams.Email)
-
-	expiresInSeconds := userParams.ExpiresInSeconds
-	if expiresInSeconds == 0 || expiresInSeconds > 3600 {
-		expiresInSeconds = 3600 // Default 1 hour
-	}
-
-	log.Println("user", expiresInSeconds, cfg.serverSecret)
-
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Invalid password", err)
+		respondWithError(w, http.StatusUnauthorized, "Invalid user", err)
 		return
 	}
 
+	// Check the password
 	if !auth.CheckPasswordHash(userParams.Password, user.HashedPassword) {
 		respondWithError(w, http.StatusUnauthorized, "Invalid password", err)
 		return
 	}
 
-	token, err := auth.MakeJWT(user.ID, cfg.serverSecret, time.Duration(expiresInSeconds)*time.Second)
+	// Generate the access token
+	token, err := auth.MakeJWT(user.ID, cfg.serverSecret, time.Duration(EXPIRES_IN_SECONDS)*time.Second)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error generating token", err)
+		return
+	}
+
+	// generate the resfresh token
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error generating refresh token", err)
+		return
+	}
+
+	// Save the refresh token in the database
+	_, err = cfg.dbQueries.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		UserID: user.ID,
+		Token:  refreshToken,
+	})
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error saving refresh token", err)
 		return
 	}
 
@@ -101,9 +121,38 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 			UpdatedAt: user.CreatedAt,
 			Email:     user.Email,
 		},
-		Token: token,
+		Token:        token,
+		RefreshToken: refreshToken,
 	})
 
+}
+
+func (cfg *apiConfig) handleRefresh(w http.ResponseWriter, r *http.Request) {
+	// get the token from the request
+	inputToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Error getting refresh token", err)
+		return
+	}
+
+	// look up the refresh token in the database
+
+	refreshToken, err := cfg.dbQueries.GetUserFromRefreshToken(r.Context(), inputToken)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid refresh token", err)
+		return
+	}
+
+	// Generate the refreshed access token
+	token, err := auth.MakeJWT(refreshToken.UserID, cfg.serverSecret, time.Duration(EXPIRES_IN_SECONDS)*time.Second)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error generating token", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, tokenResponse{
+		Token: token,
+	})
 }
 
 func (cfg *apiConfig) handlerReadUsers(w http.ResponseWriter, r *http.Request) {

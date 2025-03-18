@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -32,7 +34,6 @@ func CheckPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-// MakeJWT -
 func MakeJWT(
 	userID uuid.UUID,
 	tokenSecret string,
@@ -48,13 +49,12 @@ func MakeJWT(
 	return token.SignedString(signingKey)
 }
 
-// ValidateJWT -
 func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	claimsStruct := jwt.RegisteredClaims{}
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&claimsStruct,
-		func(token *jwt.Token) (interface{}, error) { return []byte(tokenSecret), nil },
+		func(token *jwt.Token) (any, error) { return []byte(tokenSecret), nil },
 	)
 	if err != nil {
 		return uuid.Nil, err
@@ -78,6 +78,19 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 		return uuid.Nil, fmt.Errorf("invalid user ID: %w", err)
 	}
 	return id, nil
+}
+
+func MakeRefreshToken() (string, error) {
+
+	key := make([]byte, 32)
+	vals, err := rand.Read(key)
+	if err != nil {
+		return "", err
+	}
+
+	hexData := hex.EncodeToString(key[:vals])
+	return hexData, nil
+
 }
 
 func GetBearerToken(headers http.Header) (string, error) {
